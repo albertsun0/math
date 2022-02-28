@@ -36,15 +36,10 @@ function App() {
     socket.on("users" , data => {
       console.log(data);
       setUserList(data);
-      
     })
 
     socket.on("joined" , data => {
       console.log(data.name + " joined");
-
-      // let temp = userList;
-      // temp.push(data);
-      // setUserList(temp);
     })
 
     socket.on("leave", data => {

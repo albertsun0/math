@@ -14,9 +14,19 @@ const io = require('socket.io')(server, {
     cors: {
       origin: '*',
     }
-  });
+});
+
+const gameLen = 180;
+const numQuestions = 12;
+const maxPlayers = 8;
 
 let users = [];
+let gameStarted = false;
+let gameUsers = [];
+
+
+let answers = [1,1,1,1,1,1,1,1,1,1,1,1];
+let questions = ["1","2","3","4","5","6","7","8","9","10","11","12"];
 
 io.on("connection", (socket) => {
   console.log("New client connected");
@@ -24,6 +34,9 @@ io.on("connection", (socket) => {
   let userInfo = {};
 
   socket.on("join", (data) => {
+    data.solved = 2;
+    data.inGame = gameStarted ? false : true;
+    data.ready = false;
     userInfo = data;
     users.push(data);
     io.emit("joined", data);
@@ -31,6 +44,28 @@ io.on("connection", (socket) => {
     io.emit("users", users);
     console.log(users);
     sendGlobalMessage(io, data.name + " joined", data.color);
+  })
+
+  socket.on("startGame", () => {
+    //assume game is allowed to be started?? ex players ready
+    gameStarted = true;
+    gameUsers = [...users];
+
+  })
+
+  socket.on("submit", ({questionID, answer}) => {
+    if(answers[questionID] = answer){
+      //if got last question right
+      if(questionID == numQuestions-1){
+        socket.emit("correct", {question:-1})
+      }
+      else{
+        socket.emit("correct", {question:questions[questionID+1]})
+      }
+    }
+    else{
+      socket.emit("incorrect")
+    }
   })
 
   socket.on("sendMessage", ({name, color, message}) => {
@@ -50,10 +85,10 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Client disconnected " + userInfo.name);
+    let index = users.indexOf(userInfo);
     if(index !== -1){
       console.log("a logged in user left");
       io.emit("leave" , userInfo);
-      let index = users.indexOf(userInfo);
       users.splice(index, 1);
       console.log(users);
       io.emit("users", users);
