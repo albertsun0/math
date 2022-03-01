@@ -28,11 +28,34 @@ let rank = 1;
 let answers = [1,1,1,1,1,1,1,1,1,1,1,1];
 let questions = ["1","2","3","4","5","6","7","8","9","10","11","12"];
 
+const rand = (min,max) => {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+const genQuestions = () => {
+  for(i = 0; i<12; i++){
+    if(Math.random() < 0.5){
+      let a = rand(1,999);
+      let b = rand(1,999);
+      let q = ""+a + " + "+b;
+      questions[i] = q;
+      answers[i] = a+b;
+    }
+    else{
+      let a = rand(1,999);
+      let b = rand(1,999);
+      let q = ""+a + " - "+b;
+      questions[i] = q;
+      answers[i] = a-b;
+    }
+  }
+}
+
 io.on("connection", (socket) => {
   console.log("New client connected");
   
   let userInfo = {};
-  
+
   socket.on("join", (data) => {
     data.solved = 0;
     data.inGame = gameStarted ? false : true;
@@ -55,6 +78,9 @@ io.on("connection", (socket) => {
 
   socket.on("startGame", () => {
     //assume game is allowed to be started?? ex players ready
+    genQuestions();
+    console.log(questions);
+    console.log(answers);
     gameStarted = true;
     io.emit("gameStart");
     io.emit("question", {question:questions[0]});
