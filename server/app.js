@@ -23,7 +23,7 @@ const maxPlayers = 8;
 let users = [];
 let gameStarted = false;
 let gameUsers = [];
-
+let rank = 1;
 
 let answers = [1,1,1,1,1,1,1,1,1,1,1,1];
 let questions = ["1","2","3","4","5","6","7","8","9","10","11","12"];
@@ -34,34 +34,46 @@ io.on("connection", (socket) => {
   let userInfo = {};
 
   socket.on("join", (data) => {
-    data.solved = 2;
+    data.solved = 0;
     data.inGame = gameStarted ? false : true;
     data.ready = false;
     userInfo = data;
-    users.push(data);
+    users.push(userInfo);
     io.emit("joined", data);
     socket.emit("joinSuccess", data);
     io.emit("users", users);
+    io.emit("gameState", gameStarted);
     console.log(users);
     sendGlobalMessage(io, data.name + " joined", data.color);
+  })
+
+  socket.on("ready", () => {
+    userInfo.ready = !userInfo.ready;
+    io.emit("users", users);
+    socket.emit("setReady", userInfo.ready);
   })
 
   socket.on("startGame", () => {
     //assume game is allowed to be started?? ex players ready
     gameStarted = true;
-    gameUsers = [...users];
-
+    io.emit("gameStart");
+    io.emit("question", {question:questions[0]});
   })
 
-  socket.on("submit", ({questionID, answer}) => {
-    if(answers[questionID] = answer){
+  socket.on("submit", ({answer}) => {
+    if(answers[userInfo.solved] == answer){
       //if got last question right
-      if(questionID == numQuestions-1){
-        socket.emit("correct", {question:-1})
+      if(userInfo.solved == numQuestions-1){
+        socket.emit("correct", {question:"win", rank:rank})
+        rank++;
+        userInfo.solved++;
       }
       else{
-        socket.emit("correct", {question:questions[questionID+1]})
+        userInfo.solved++;
+        socket.emit("correct", {question:questions[userInfo.solved]})
+        
       }
+      io.emit("users", users);
     }
     else{
       socket.emit("incorrect")

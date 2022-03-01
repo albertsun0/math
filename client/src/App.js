@@ -23,6 +23,11 @@ function App() {
   const [messageList, setMessageList] = useState([]);
   const [userList, setUserList] = useState([]);
   
+  const [ready, setReady] = useState(false);
+  const [gameStart, setGameStart] = useState(false);
+
+  const [question, setQuestion] = useState("");
+  const [win, setWin] = useState(0);
   
   const colors = ['#ec7b7b', '#88ec7b', '#7b8cec', '#e87bec', '#ecea7b'];
   useEffect(() => {
@@ -31,6 +36,23 @@ function App() {
       setUser(data.name);
       selectColor(data.color);
       toggleLoggedIn(true);
+    })
+
+    socket.on("question", data =>{
+      setQuestion(data.question);
+    })
+    socket.on("correct", data => {
+      if(data == "win"){
+        setWin(data.rank);
+      }
+      else{
+        setQuestion(data.question);
+      }
+      
+    })
+
+    socket.on("gameStart", data => {
+      setGameStart(true);
     })
     
     socket.on("users" , data => {
@@ -53,6 +75,10 @@ function App() {
       console.log(messageList);
     })
 
+    socket.on("setReady", data => {
+      setReady(data);
+    })
+
     return () => socket.disconnect();
   }, []);
 
@@ -64,6 +90,14 @@ function App() {
   //   console.log(r + " " +c);
   //   socket.emit('UpdateSquare', {r:r,c:c});
   // }
+
+  const toggleReady = () => {
+    socket.emit("ready");
+  }
+
+  const start = () => {
+    socket.emit("startGame");
+  }
 
   const sendMessage = () => {
     let message = document.getElementById('messsage').value;
@@ -87,12 +121,20 @@ function App() {
   
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
-      sendMessage();
+      let ans = document.getElementById("input").value;
+      document.getElementById("input").value = "";
+      if(ans !== ""){
+        socket.emit("submit" , {answer:ans})
+      }
     }
   }
+
   return (
     <div>
-      {loggedIn ? <Game colors={colors} messageList={messageList} handleKeyDown={handleKeyDown} sendMessage={sendMessage} userList = {userList}></Game>
+      {loggedIn ? <Game colors={colors}  userList = {userList} gameStart = {gameStart} user = {user}
+      ready = {ready} toggleReady = {toggleReady} start = {start} question = {question} handleKeyDown = {handleKeyDown}
+      rank = {win}
+      ></Game>
       : 
       <Login sendLogin={sendLogin} colors={colors} select={select} selectedColor={selectedColor}></Login>
       }
