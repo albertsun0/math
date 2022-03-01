@@ -32,7 +32,7 @@ io.on("connection", (socket) => {
   console.log("New client connected");
   
   let userInfo = {};
-
+  
   socket.on("join", (data) => {
     data.solved = 0;
     data.inGame = gameStarted ? false : true;

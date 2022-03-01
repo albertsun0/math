@@ -42,7 +42,7 @@ function App() {
       setQuestion(data.question);
     })
     socket.on("correct", data => {
-      if(data == "win"){
+      if(data.question === "win"){
         setWin(data.rank);
       }
       else{

@@ -20,7 +20,7 @@ function Game({colors, userList, gameStart, user, ready, toggleReady, start, que
             <input type = "text" className = "p-2 text-lg bg-gray-300 rounded-xl" id="input" onKeyDown = {handleKeyDown}></input>
           </div>:
           <div className = "flex flex-col items-center space-y-10">
-            <div className = "text-2xl text-white">{`You Placed ${rank}st!`}</div>
+            <div className = "text-2xl text-white">{`You Placed ${rank}${rank >3 ? "th" : ""}${rank == 2 ? "nd" : ""}${rank == 1 ? "st" : ""}${rank == 3 ? "rd" : ""}`}</div>
             <div className = "text-xl text-white">Waiting for next game...</div>
           </div>
         }
