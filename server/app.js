@@ -22,7 +22,6 @@ const maxPlayers = 8;
 
 let users = [];
 let gameStarted = false;
-let gameUsers = [];
 let rank = 1;
 
 let answers = [1,1,1,1,1,1,1,1,1,1,1,1];
@@ -65,9 +64,11 @@ io.on("connection", (socket) => {
     io.emit("joined", data);
     socket.emit("joinSuccess", data);
     io.emit("users", users);
-    io.emit("gameState", gameStarted);
+    socket.emit("gameStart", gameStarted);
+    if(gameStarted){
+      socket.emit("question", {question:questions[0]});
+    }
     console.log(users);
-    sendGlobalMessage(io, data.name + " joined", data.color);
   })
 
   socket.on("ready", () => {
@@ -78,12 +79,14 @@ io.on("connection", (socket) => {
 
   socket.on("startGame", () => {
     //assume game is allowed to be started?? ex players ready
-    genQuestions();
-    console.log(questions);
-    console.log(answers);
-    gameStarted = true;
-    io.emit("gameStart");
-    io.emit("question", {question:questions[0]});
+    if(!gameStarted){
+      genQuestions();
+      console.log(questions);
+      console.log(answers);
+      gameStarted = true;
+      io.emit("gameStart", true);
+      io.emit("question", {question:questions[0]});
+    }
   })
 
   socket.on("submit", ({answer}) => {
@@ -93,6 +96,15 @@ io.on("connection", (socket) => {
         socket.emit("correct", {question:"win", rank:rank})
         rank++;
         userInfo.solved++;
+        let allWin = true;
+        for(i = 0; i<users.length; i++){
+          if(users[i].solved !== 12){
+            allWin = false;
+          }
+        }
+        if(allWin){
+          endGame(io);
+        }
       }
       else{
         userInfo.solved++;
@@ -130,22 +142,34 @@ io.on("connection", (socket) => {
       users.splice(index, 1);
       console.log(users);
       io.emit("users", users);
-      sendGlobalMessage(io, userInfo.name + " left", userInfo.color);
     }
   });
 });
 
-const sendGlobalMessage = (io, message, color) => {
-  let today = new Date();
-    let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    let data = {
-      hasUser:false, 
-      user: {name:"admin", color:color},
-      text: message,
-      time: time,
-    };
-    io.emit("newMessage", data);
+const endGame = (io) => {
+  console.log("game ended");
+  if(gameStarted = true){
+    gameStarted = false;
+    rank = 1;
+    io.emit("EndGame");
+    for(i = 0; i<users.length; i++){
+      users[i].inGame = true;
+      users[i].solved = 0;
+      io.emit("users", users);
+    }
+  }
 }
+// const sendGlobalMessage = (io, message, color) => {
+//   let today = new Date();
+//     let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+//     let data = {
+//       hasUser:false, 
+//       user: {name:"admin", color:color},
+//       text: message,
+//       time: time,
+//     };
+//     io.emit("newMessage", data);
+// }
 
 
 server.listen(port, () => console.log(`Listening on port ${port}`));

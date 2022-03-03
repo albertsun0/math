@@ -52,9 +52,12 @@ function App() {
     })
 
     socket.on("gameStart", data => {
-      setGameStart(true);
+      setGameStart(data);
     })
-    
+    socket.on("EndGame", data => {
+      setGameStart(false);
+      setWin(0);
+    })
     socket.on("users" , data => {
       console.log(data);
       setUserList(data);
@@ -81,6 +84,8 @@ function App() {
 
     return () => socket.disconnect();
   }, []);
+
+
 
   // const sendToggle = () =>{
   //   socket.emit('Sendtoggle', toggle);
